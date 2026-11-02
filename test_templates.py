@@ -46,5 +46,26 @@ class TestTemplates(unittest.TestCase):
         self.assertIn("name: freedom-skill-partnership", content)
         self.assertIn("description:", content)
 
+    def test_no_hardcoded_secrets_in_templates(self):
+        """Test that static template files do not contain exposed hardcoded secrets."""
+        files_to_check = ["RESULT-TEMPLATE.md", "SKILL.md", "skill-book.json"]
+
+        # simple check for common secret variable names with assignments
+        secret_patterns = [
+            r"password\s*=\s*['\"][^'\"]+['\"]",
+            r"api_key\s*=\s*['\"][^'\"]+['\"]",
+            r"secret\s*=\s*['\"][^'\"]+['\"]",
+            r"token\s*=\s*['\"][^'\"]+['\"]"
+        ]
+
+        for filepath in files_to_check:
+            self.assertTrue(os.path.exists(filepath), f"{filepath} does not exist")
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            for pattern in secret_patterns:
+                matches = re.findall(pattern, content, re.IGNORECASE)
+                self.assertEqual(len(matches), 0, f"Found potential exposed secret matching {pattern} in {filepath}")
+
 if __name__ == "__main__":
     unittest.main()
